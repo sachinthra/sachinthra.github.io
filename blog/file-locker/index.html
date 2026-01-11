@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Sachinthra N V" href="https://sachinthra.github.io/rss.xml"><meta name="generator" content="Astro v5.5.5"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><!-- Canonical URL --><link rel="canonical" href="https://sachinthra.github.io/blog/file-locker/"><!-- Theme initialization script to prevent FOUC --><script>
+	// Initialize theme immediately to prevent flash
+	(function() {
+		const theme = localStorage.getItem('theme') || 'dark';
+		document.documentElement.setAttribute('data-theme', theme);
+	})();
+</script><!-- Primary Meta Tags --><title>File Locker</title><meta name="title" content="File Locker"><meta name="description" content="A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption."><meta name="author" content="Sachinthra N V"><meta name="keywords" content="Sachinthra N V, Cloud Developer, Software Engineer, HPE, Portfolio, Go, Python, Robotics, IOT, React, DevOps, IoT, Raspberry Pi"><!-- Open Graph / Facebook --><meta property="og:type" content="website"><meta property="og:url" content="https://sachinthra.github.io/blog/file-locker/"><meta property="og:title" content="File Locker"><meta property="og:description" content="A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption."><meta property="og:image" content="https://sachinthra.github.io/blog-placeholder-1.jpg"><meta property="og:site_name" content="Sachinthra N V - Portfolio"><!-- Twitter --><meta property="twitter:card" content="summary_large_image"><meta property="twitter:url" content="https://sachinthra.github.io/blog/file-locker/"><meta property="twitter:title" content="File Locker"><meta property="twitter:description" content="A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption."><meta property="twitter:image" content="https://sachinthra.github.io/blog-placeholder-1.jpg"><meta property="twitter:creator" content="@sachinthra"><!-- JSON-LD structured data for better SEO --><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"File Locker","description":"A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption.","image":"https://sachinthra.github.io/images/blog/file-locker/file-locker-hero.jpg","datePublished":"2026-01-10T18:30:00.000Z","dateModified":"2026-01-10T18:30:00.000Z","author":{"@type":"Person","name":"Sachinthra N V","url":"https://sachinthra.github.io"},"publisher":{"@type":"Person","name":"Sachinthra N V"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://sachinthra.github.io/blog/file-locker/"}}</script><link rel="stylesheet" href="/styles/about.BiA3aSyX.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.hero-image[data-astro-cid-bvzihdzo]{width:100%}.hero-image[data-astro-cid-bvzihdzo] img[data-astro-cid-bvzihdzo]{display:block;margin:0 auto;border-radius:12px;box-shadow:var(--box-shadow)}.prose[data-astro-cid-bvzihdzo]{width:720px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:rgb(var(--gray-dark))}.title[data-astro-cid-bvzihdzo]{margin-bottom:1em;padding:1em 0;text-align:center;line-height:1}.title[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0 0 .5em}.date[data-astro-cid-bvzihdzo]{margin-bottom:.5em;color:rgb(var(--gray))}.last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <h2 data-astro-cid-3ef6ksr2><a href="/" data-astro-cid-3ef6ksr2>Sachinthra N V</a></h2> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <button id="theme-toggle" type="button" aria-label="Toggle theme" data-astro-cid-x3pjskd3> <span id="theme-toggle-light-icon" class="theme-icon" data-astro-cid-x3pjskd3> <!-- Sun icon for light mode --> <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-x3pjskd3> <circle cx="12" cy="12" r="5" data-astro-cid-x3pjskd3></circle> <line x1="12" y1="1" x2="12" y2="3" data-astro-cid-x3pjskd3></line> <line x1="12" y1="21" x2="12" y2="23" data-astro-cid-x3pjskd3></line> <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" data-astro-cid-x3pjskd3></line> <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" data-astro-cid-x3pjskd3></line> <line x1="1" y1="12" x2="3" y2="12" data-astro-cid-x3pjskd3></line> <line x1="21" y1="12" x2="23" y2="12" data-astro-cid-x3pjskd3></line> <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" data-astro-cid-x3pjskd3></line> <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" data-astro-cid-x3pjskd3></line> </svg> </span> <span id="theme-toggle-dark-icon" class="theme-icon" data-astro-cid-x3pjskd3> <!-- Moon icon for dark mode --> <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-x3pjskd3> <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" data-astro-cid-x3pjskd3></path> </svg> </span> </button>  <script>
+	// Theme toggle functionality
+	function initThemeToggle() {
+		const themeToggle = document.getElementById('theme-toggle');
+		const lightIcon = document.getElementById('theme-toggle-light-icon');
+		const darkIcon = document.getElementById('theme-toggle-dark-icon');
+		
+		if (!themeToggle || !lightIcon || !darkIcon) {
+			console.log('Theme toggle elements not found');
+			return;
+		}
+
+		// Get initial theme from localStorage or default to light
+		const currentTheme = localStorage.getItem('theme') || 'light';
+		
+		// Apply initial theme
+		document.documentElement.setAttribute('data-theme', currentTheme);
+		updateIcons(currentTheme);
+
+		// Toggle theme function
+		function toggleTheme() {
+			console.log('Toggle theme clicked');
+			const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+			const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+			
+			console.log('Switching from', currentTheme, 'to', newTheme);
+			
+			document.documentElement.setAttribute('data-theme', newTheme);
+			localStorage.setItem('theme', newTheme);
+			updateIcons(newTheme);
+		}
+
+		// Update icon visibility
+		function updateIcons(theme) {
+			if (!lightIcon || !darkIcon) return;
+			
+			lightIcon.classList.remove('active');
+			darkIcon.classList.remove('active');
+			
+			if (theme === 'dark') {
+				lightIcon.classList.add('active');
+			} else {
+				darkIcon.classList.add('active');
+			}
+			
+			console.log('Updated icons for theme:', theme);
+		}
+
+		// Add click event listener
+		themeToggle.addEventListener('click', toggleTheme);
+		console.log('Theme toggle initialized');
+	}
+
+	// Initialize on DOM content loaded
+	document.addEventListener('DOMContentLoaded', initThemeToggle);
+
+	// Also initialize immediately in case DOMContentLoaded already fired
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initThemeToggle);
+	} else {
+		initThemeToggle();
+	}
+</script> <a href="mailto:sachinthranv@gmail.com" target="_blank" data-astro-cid-3ef6ksr2> <span class="sr-only" data-astro-cid-3ef6ksr2>Send an email to Sachinthra</span> <svg viewBox="0 0 24 24" aria-hidden="true" width="32" height="32" astro-icon="social/gmail" data-astro-cid-3ef6ksr2> <path fill="currentColor" d="M12 13.065L3.2 6.6V18.4C3.2 19.28 3.92 20 4.8 20H19.2C20.08 20 20.8 19.28 20.8 18.4V6.6L12 13.065ZM12 11.2L20.8 4.8H19.2L12 9.935L4.8 4.8H3.2L12 11.2ZM19.2 4H4.8C3.92 4 3.2 4.72 3.2 5.6V6.4L12 12.8L20.8 6.4V5.6C20.8 4.72 20.08 4 19.2 4Z" data-astro-cid-3ef6ksr2></path> </svg> </a> <a href="https://linkedin.com/in/sachinthra/" target="_blank" data-astro-cid-3ef6ksr2> <span class="sr-only" data-astro-cid-3ef6ksr2>Follow Sachinthra on Linkedin</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M1.146 1.146C1.146 0.513 1.659 0 2.293 0h11.414c.634 0 1.147.513 1.147 1.146v11.708c0 .633-.513 1.146-1.147 1.146H2.293c-.634 0-1.147-.513-1.147-1.146V1.146zM4.943 13.5V6.5H2.5v7h2.443zm-1.221-8.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm9.278 8.25V9.25c0-2.25-1.5-3.25-3.25-3.25-1.5 0-2.25.75-2.5 1.25V6.5H5.5v7h2.5v-3.5c0-.5.25-1.25 1.25-1.25s1.25.75 1.25 1.25V13.5h2.5z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://x.com/Sachinthra" target="_blank" data-astro-cid-3ef6ksr2> <span class="sr-only" data-astro-cid-3ef6ksr2>Follow Sachinthra on X(Twitter)</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/sachinthra" target="_blank" data-astro-cid-3ef6ksr2> <span class="sr-only" data-astro-cid-3ef6ksr2>Go to Sachinthra's GitHub repo</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="hero-image" data-astro-cid-bvzihdzo> <img width="1020" height="510" src="/images/blog/file-locker/file-locker-hero.jpg" alt="" data-astro-cid-bvzihdzo> </div> <div class="prose" data-astro-cid-bvzihdzo> <div class="title" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-01-10T18:30:00.000Z"> Jan 1, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>File Locker</h1> <hr data-astro-cid-bvzihdzo> </div>  <h2 id="the-pitch">The Pitch</h2>
+<p>I wanted a Google Drive alternative, but one where <em>I</em> owned the encryption keys.</p>
+<p><strong>File Locker</strong> is a self-hosted platform I built to store files securely. It’s not just a wrapper around an S3 bucket; it encrypts everything at rest using <strong>AES-256</strong>, supports video streaming with seeking (which is hard with encryption!), and has a full CLI for automation.</p>
+<p>It’s currently running live on my Raspberry Pi.</p>
+<hr>
+<h2 id="tech-stack">Tech Stack</h2>
+<ul>
+<li><strong>Backend:</strong> Go (Chi router), PostgreSQL (Metadata), Redis (Sessions), MinIO (Object Storage)</li>
+<li><strong>Frontend:</strong> Preact (Lightweight React), Vite, TailwindCSS</li>
+<li><strong>Security:</strong> AES-256-GCM (Files), AES-CTR (Streaming), JWT, Argon2</li>
+<li><strong>DevOps:</strong> Docker Compose, Multi-Arch Builds (ARM64/AMD64)</li>
+</ul>
+<hr>
+<h2 id="the-coolest-features">The Coolest Features</h2>
+<h3 id="1-encrypted-video-streaming-with-seek">1. Encrypted Video Streaming (with Seek!)</h3>
+<p>This was the hardest technical challenge. You can’t just encrypt a video file and expect it to stream.</p>
+<ul>
+<li><strong>The Problem:</strong> If a user jumps to minute 5:00, the player requests a specific byte range. But encryption changes byte alignment.</li>
+<li><strong>The Solution:</strong> I implemented <strong>AES-CTR</strong> mode for streaming. I calculate the exact block offset based on the requested byte range, adjust the IV (Initialization Vector), and decrypt <em>just</em> that chunk on the fly.</li>
+</ul>
+<h3 id="2-no-trust-storage">2. “No-Trust” Storage</h3>
+<p>Even if someone steals the physical hard drive from my Pi, they get nothing.</p>
+<ul>
+<li>Files are encrypted <em>before</em> they touch the disk.</li>
+<li>Metadata (names, types) is stored separately in Postgres.</li>
+<li>Keys are managed via a secure envelope pattern.</li>
+</ul>
+<h3 id="3-the-cli-tool">3. The CLI Tool</h3>
+<p>I love the terminal, so I built a Go CLI with <strong>38 commands</strong>. It mimics the API perfectly.</p>
+<ul>
+<li><code>fl upload path/to/file</code> (Drag-and-drop terminal upload)</li>
+<li><code>fl ls</code> (Lists files like a native directory)</li>
+<li><code>fl share</code> (Generates temporary access links)</li>
+</ul>
+<hr>
+<h2 id="product-preview">Product Preview</h2>
+<p><img src="/images/blog/file-locker/file-locker-dashboard.jpg" alt="File Locker Dashboard"><br>
+<em>Modern web interface with file management and uploads</em></p>
+<p><img src="/images/blog/file-locker/file-locker-admin.jpg" alt="Admin Dashboard"><br>
+<em>System stats, user management, and audit logs</em></p>
+<p><img src="/images/blog/file-locker/file-locker-cli.jpg" alt="CLI Tool"><br>
+<em>Automation-ready CLI with progress tracking</em></p>
+<hr>
+<h2 id="what-i-built">What I Built</h2>
+<h3 id="backend-go">Backend (Go)</h3>
+<ul>
+<li>REST API with 32+ endpoints</li>
+<li>Multipart file uploads with streaming</li>
+<li>Automatic encryption pipeline</li>
+<li>Secure downloads with on-the-fly decryption</li>
+<li>Video streaming with HTTP Range support</li>
+<li>PostgreSQL full-text search</li>
+</ul>
+<h3 id="authentication--security">Authentication &#x26; Security</h3>
+<ul>
+<li>JWT-based sessions with Redis caching</li>
+<li>Personal Access Tokens for API/CLI</li>
+<li>Role-based access control</li>
+<li>Password hashing with Bcrypt</li>
+<li>Session expiry + force logout</li>
+</ul>
+<h3 id="admin-dashboard">Admin Dashboard</h3>
+<ul>
+<li>User approval &#x26; role management</li>
+<li>File moderation &#x26; deletion</li>
+<li>Storage analysis &#x26; cleanup</li>
+<li>Audit logs</li>
+<li>System announcements</li>
+</ul>
+<h3 id="web-interface">Web Interface</h3>
+<ul>
+<li>Drag-and-drop uploads</li>
+<li>Real-time progress</li>
+<li>File tagging &#x26; search</li>
+<li>Expiring files</li>
+<li>In-browser video player</li>
+<li>Dark / light mode</li>
+</ul>
+<h3 id="cli-tool">CLI Tool</h3>
+<ul>
+<li>38 commands (100% API coverage)</li>
+<li>Upload, download, search, export</li>
+<li>Token management</li>
+<li>Admin tools</li>
+<li>Script-friendly output &#x26; exit codes</li>
+</ul>
+<hr>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<p>It’s a microservices-style setup running via Docker Compose:</p>
+<ol>
+<li><strong>Nginx:</strong> Handles SSL termination and routes traffic.</li>
+<li><strong>Go API:</strong> The brain. Handles auth, encryption logic, and database queries.</li>
+<li><strong>MinIO:</strong> The dumb storage layer. It only sees encrypted blobs.</li>
+<li><strong>Redis:</strong> Caches user sessions and download tokens for speed.</li>
+</ol>
+<p><strong>Service Flow:</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>Frontend (Nginx) → Go API → PostgreSQL</span></span>
+<span class="line"><span>                     ↓</span></span>
+<span class="line"><span>                   MinIO</span></span>
+<span class="line"><span>                     ↓</span></span>
+<span class="line"><span>                   Redis</span></span></code></pre>
+<p><strong>Encryption Pipeline:</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>Upload → Encrypt (AES-256-GCM) → Store (MinIO)</span></span>
+<span class="line"><span>                ↓</span></span>
+<span class="line"><span>         Metadata (PostgreSQL)</span></span></code></pre>
+<p><strong>Streaming Pipeline:</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>Range Request → Decrypt (AES-256-CTR) → Stream</span></span></code></pre>
+<hr>
+<h2 id="key-takeaways">Key Takeaways</h2>
+<ul>
+<li><strong>Go is perfect for IO:</strong> Streaming encrypted data with <code>io.Reader</code> and <code>io.Writer</code> interfaces in Go is incredibly memory efficient.</li>
+<li><strong>State management:</strong> Managing upload progress and resumable uploads required careful frontend-backend sync.</li>
+<li><strong>Cross-Platform Builds:</strong> Since I code on a Mac (ARM64) and deploy to a Pi (Linux ARM64), setting up <code>docker buildx</code> pipelines was essential.</li>
+</ul>
+<p><strong><a href="https://github.com/sachinthra/file-locker">View Source on GitHub</a></strong></p>
+<hr>
+<h2 id="why-this-project-matters">Why This Project Matters</h2>
+<p>This project demonstrates:</p>
+<ul>
+<li><strong>Backend engineering:</strong> Go APIs, database design, and efficient data handling</li>
+<li><strong>Security implementation:</strong> AES encryption, JWT authentication, and RBAC</li>
+<li><strong>DevOps practices:</strong> Docker containerization, multi-service orchestration, and ARM64 deployment</li>
+<li><strong>System design:</strong> Scalable architecture with proper separation of concerns</li>
+<li><strong>Real-world production experience:</strong> Running 24/7 on my home network</li>
+</ul>
+<p>File Locker isn’t just a demo app — it’s a <strong>real system</strong> I use daily to solve real storage and streaming needs.</p>  </div> </article> </main> <footer data-astro-cid-sz7xmlte>
+&copy; 2026 Sachinthra. All rights reserved.
+<div class="social-links" data-astro-cid-sz7xmlte> <!-- <a href="https://m.webtoo.ls/@astro" target="_blank">
+			<span class="sr-only">Follow Astro on Mastodon</span>
+			<svg
+				viewBox="0 0 16 16"
+				aria-hidden="true"
+				width="32"
+				height="32"
+				astro-icon="social/mastodon"
+				><path
+					fill="currentColor"
+					d="M11.19 12.195c2.016-.24 3.77-1.475 3.99-2.603.348-1.778.32-4.339.32-4.339 0-3.47-2.286-4.488-2.286-4.488C12.062.238 10.083.017 8.027 0h-.05C5.92.017 3.942.238 2.79.765c0 0-2.285 1.017-2.285 4.488l-.002.662c-.004.64-.007 1.35.011 2.091.083 3.394.626 6.74 3.78 7.57 1.454.383 2.703.463 3.709.408 1.823-.1 2.847-.647 2.847-.647l-.06-1.317s-1.303.41-2.767.36c-1.45-.05-2.98-.156-3.215-1.928a3.614 3.614 0 0 1-.033-.496s1.424.346 3.228.428c1.103.05 2.137-.064 3.188-.189zm1.613-2.47H11.13v-4.08c0-.859-.364-1.295-1.091-1.295-.804 0-1.207.517-1.207 1.541v2.233H7.168V5.89c0-1.024-.403-1.541-1.207-1.541-.727 0-1.091.436-1.091 1.296v4.079H3.197V5.522c0-.859.22-1.541.66-2.046.456-.505 1.052-.764 1.793-.764.856 0 1.504.328 1.933.983L8 4.39l.417-.695c.429-.655 1.077-.983 1.934-.983.74 0 1.336.259 1.791.764.442.505.661 1.187.661 2.046v4.203z"
+				></path></svg
+			>
+		</a> --> <a href="mailto:sachinthranv@gmail.com" target="_blank" data-astro-cid-sz7xmlte> <span class="sr-only" data-astro-cid-sz7xmlte>Send an email to Sachinthra</span> <svg viewBox="0 0 24 24" aria-hidden="true" width="32" height="32" astro-icon="social/gmail" data-astro-cid-sz7xmlte> <path fill="currentColor" d="M12 13.065L3.2 6.6V18.4C3.2 19.28 3.92 20 4.8 20H19.2C20.08 20 20.8 19.28 20.8 18.4V6.6L12 13.065ZM12 11.2L20.8 4.8H19.2L12 9.935L4.8 4.8H3.2L12 11.2ZM19.2 4H4.8C3.92 4 3.2 4.72 3.2 5.6V6.4L12 12.8L20.8 6.4V5.6C20.8 4.72 20.08 4 19.2 4Z" data-astro-cid-sz7xmlte></path> </svg> </a> <a href="https://x.com/Sachinthra" target="_blank" data-astro-cid-sz7xmlte> <span class="sr-only" data-astro-cid-sz7xmlte>Follow Sachinthra on X</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" astro-icon="social/x" data-astro-cid-sz7xmlte><path fill="currentColor" d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z" data-astro-cid-sz7xmlte></path></svg> </a> <a href="https://linkedin.com/in/sachinthra/" target="_blank" data-astro-cid-sz7xmlte> <span class="sr-only" data-astro-cid-sz7xmlte>Follow Sachinthra on Linkedin</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" astro-icon="social/linkedin" data-astro-cid-sz7xmlte><path fill="currentColor" d="M1.146 1.146C1.146 0.513 1.659 0 2.293 0h11.414c.634 0 1.147.513 1.147 1.146v11.708c0 .633-.513 1.146-1.147 1.146H2.293c-.634 0-1.147-.513-1.147-1.146V1.146zM4.943 13.5V6.5H2.5v7h2.443zm-1.221-8.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm9.278 8.25V9.25c0-2.25-1.5-3.25-3.25-3.25-1.5 0-2.25.75-2.5 1.25V6.5H5.5v7h2.5v-3.5c0-.5.25-1.25 1.25-1.25s1.25.75 1.25 1.25V13.5h2.5z" data-astro-cid-sz7xmlte></path></svg> </a> <a href="https://github.com/sachinthra" target="_blank" data-astro-cid-sz7xmlte> <span class="sr-only" data-astro-cid-sz7xmlte>Go to Sachinthra's GitHub repo</span> <svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" astro-icon="social/github" data-astro-cid-sz7xmlte><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-sz7xmlte></path></svg> </a> </div> </footer>  </body></html>
