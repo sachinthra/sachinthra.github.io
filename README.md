@@ -1,2 +1,0 @@
-# sachinthra.github.io
-Portfolio

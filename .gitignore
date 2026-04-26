@@ -9,6 +9,7 @@ lerna-debug.log*
 
 v2/
 portfolio-code/
+portfolio-next/
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
