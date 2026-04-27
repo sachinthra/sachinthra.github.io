@@ -1,0 +1,427 @@
+1:"$Sreact.fragment"
+2:I[92276,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js","/_next/static/chunks/059rb3~t9vwpm.js","/_next/static/chunks/06jefac748n2p.js"],"default"]
+a:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"OutletBoundary"]
+b:"$Sreact.suspense"
+3:T189c,
+I wanted to give a robot a face. Not a screen playing a video loop — something alive. Eyes that blink on their own, squint when confused, and light up when happy. All on a $5 OLED display the size of a postage stamp.
+
+RoboEyes is the animation engine I built to make that happen. It runs at 60 fps, smoothly interpolates between emotions, and exposes a REST API so any other system — gesture recognition, voice assistant, whatever — can control the face in real time.
+
+---
+
+## Tech Stack
+
+- **Animation Engine:** Python, PIL/Pillow for drawing, custom lerp-based state machine
+- **Display:** SSD1306 128x64 I2C OLED (driven by `luma.oled`)
+- **Emulator:** `luma.emulator` with Pygame — develop on a laptop, deploy to Pi unchanged
+- **API:** Flask REST API running in a daemon thread
+- **Hardware:** Raspberry Pi (any model with I2C)
+
+---
+
+## How It Works
+
+The core idea is simple: every frame, the engine interpolates the current eye state toward a target state. Change the target, and the eyes smoothly animate to the new look.
+
+Each emotion is just a dictionary of numbers — eye width, height, and eight eyelid coverage values (inner/outer for each lid on each eye):
+
+```python
+"HAPPY": {
+    "w": 32, "h": 44,
+    "lt_o": 0.0, "lt_i": 0.0, "lb_o": 0.82, "lb_i": 0.82,
+    "rt_i": 0.0, "rt_o": 0.0, "rb_i": 0.82, "rb_o": 0.82,
+    "cheeks": 1.0,
+}
+```
+
+When you call `eyes.set_emotion("HAPPY")`, the engine sets this as the target. Every frame, each value lerps toward the target at a configurable speed. The result: smooth, natural-looking transitions between any two emotions with zero manual animation work.
+
+---
+
+## The Dual-Environment Trick
+
+This was one of my favourite design decisions. The entry point auto-detects the environment:
+
+```python
+try:
+    from luma.oled.device import ssd1306
+    from luma.core.interface.serial import i2c
+    device = ssd1306(i2c(port=1, address=0x3C))
+except Exception:
+    from luma.emulator.device import pygame as pygame_device
+    device = pygame_device(width=128, height=64, mode="1")
+```
+
+On a Raspberry Pi with a connected OLED, it uses the real hardware driver. On my MacBook, it falls back to a Pygame window. The engine doesn't care — it just draws to a `luma` device. I do all my development and tuning in the emulator, then `scp` to the Pi and it just works.
+
+---
+
+## Threading and the Animation Loop
+
+Threading was the trickiest part. Here's the layout:
+
+| Thread | Role |
+|--------|------|
+| Main thread | Animation loop + Pygame event pump (required by macOS/SDL) |
+| Flask daemon thread | Handles all HTTP requests |
+
+Every piece of shared state is protected by a single `threading.Lock`. The Flask handlers call methods like `set_emotion()` and `trigger_overlay()`, which acquire the lock, update the target, and return. The animation loop picks up the change on the next frame.
+
+I exposed both `run()` (blocking, for macOS) and `start()` (non-blocking background thread, for Pi) so the engine works cleanly in both environments.
+
+---
+
+## REST API — Control Everything Over HTTP
+
+The Flask API runs on port 5009 and lets you control the eyes with simple HTTP calls:
+
+```bash
+curl http://localhost:5009/emotion/HAPPY
+curl http://localhost:5009/look/top-right
+curl http://localhost:5009/overlay/text/HELLO
+curl http://localhost:5009/blink
+```
+
+There's also a combined POST endpoint for setting multiple things atomically:
+
+```bash
+curl -X POST http://localhost:5009/api/robot \
+     -H "Content-Type: application/json" \
+     -d '{"emotion": "HAPPY", "overlay": {"text": "YAY!", "duration": 2}}'
+```
+
+This turned out to be the killer feature. My hand gesture recognition system running on the same Pi sends HTTP calls to change the robot's expression based on what it sees. The eyes become a dumb display — all the intelligence lives elsewhere.
+
+---
+
+## The Overlay System
+
+Sometimes you want the robot to "say" something. Overlays are full-screen takeovers: the eyes close, a message appears, then the eyes reopen.
+
+```python
+eyes.trigger_overlay(TextOverlay("HELLO!", duration=2.0))
+```
+
+`TextOverlay` handles word-wrapping and auto-scales duration based on text length. There's also `ScrollingTextOverlay` for longer messages and `IconOverlay` for bitmap images. And if none of those fit, you subclass `Overlay` and draw whatever you want:
+
+```python
+class MyOverlay(Overlay):
+    duration = 1.5
+    def render(self, draw, w, h):
+        draw.rectangle((0, 0, w, h), fill="black")
+        draw.text((w // 2, h // 2), "CUSTOM", fill="white", anchor="mm")
+```
+
+---
+
+## Extensibility — Make It Your Own
+
+I designed RoboEyes to be subclassed. You can add custom emotions without touching the library code:
+
+```python
+class MyRobot(RoboEyes):
+    EXTRA_EMOTIONS = {
+        "SLEEPY": {
+            "w": 28, "h": 40,
+            "lt_o": 0.45, "lt_i": 0.45, "lb_o": 0.0, "lb_i": 0.0,
+            "rt_o": 0.45, "rt_i": 0.45, "rb_o": 0.0, "rb_i": 0.0,
+            "cheeks": 0.0,
+        },
+    }
+
+    def __init__(self, device):
+        super().__init__(device, extra_emotions=self.EXTRA_EMOTIONS)
+```
+
+Custom directions, pupil shapes (`square`, `round`, `ellipse`), and auto-mode behaviour are all configurable the same way.
+
+---
+
+## Challenges and Lessons
+
+**Tuning eyelid values by hand is tedious.** Each emotion has 10 numeric parameters. I ended up building a small editor workflow — tweak values, watch the emulator, repeat. A visual editor would be a huge quality-of-life improvement.
+
+**macOS and Pygame threading.** SDL requires the event pump on the main thread on macOS. This forced me to split `run()` and `start()` and make sure Flask never touches the main thread. Easy in hindsight, confusing to debug the first time.
+
+**Lerp speed matters.** Too fast and transitions look robotic (ironic). Too slow and the face feels laggy. I settled on 0.35 as the default — fast enough to feel responsive, slow enough for the animation to read.
+
+---
+
+## What's Next
+
+I'm working on integrating this with a camera-based gesture recognition system so the robot reacts to hand signals in real time. I also want to add a web-based emotion editor so designing new expressions doesn't require manually editing dictionaries. And eventually, audio-reactive expressions — the eyes respond to sound input, not just API calls.
+
+---4:T134a,
+## The Pitch
+I wanted a Google Drive alternative, but one where *I* owned the encryption keys.
+
+**File Locker** is a self-hosted platform I built to store files securely. It's not just a wrapper around an S3 bucket; it encrypts everything at rest using **AES-256**, supports video streaming with seeking (which is hard with encryption!), and has a full CLI for automation.
+
+It's currently running live on my Raspberry Pi.
+
+---
+
+## Tech Stack
+
+* **Backend:** Go (Chi router), PostgreSQL (Metadata), Redis (Sessions), MinIO (Object Storage)
+* **Frontend:** Preact (Lightweight React), Vite, TailwindCSS
+* **Security:** AES-256-GCM (Files), AES-CTR (Streaming), JWT, Argon2
+* **DevOps:** Docker Compose, Multi-Arch Builds (ARM64/AMD64)
+
+---
+
+## The Coolest Features
+
+### 1. Encrypted Video Streaming (with Seek!)
+This was the hardest technical challenge. You can't just encrypt a video file and expect it to stream.
+* **The Problem:** If a user jumps to minute 5:00, the player requests a specific byte range. But encryption changes byte alignment.
+* **The Solution:** I implemented **AES-CTR** mode for streaming. I calculate the exact block offset based on the requested byte range, adjust the IV (Initialization Vector), and decrypt *just* that chunk on the fly.
+
+### 2. "No-Trust" Storage
+Even if someone steals the physical hard drive from my Pi, they get nothing.
+* Files are encrypted *before* they touch the disk.
+* Metadata (names, types) is stored separately in Postgres.
+* Keys are managed via a secure envelope pattern.
+
+### 3. The CLI Tool
+I love the terminal, so I built a Go CLI with **38 commands**. It mimics the API perfectly.
+* `fl upload path/to/file` (Drag-and-drop terminal upload)
+* `fl ls` (Lists files like a native directory)
+* `fl share` (Generates temporary access links)
+
+---
+
+## Product Preview
+
+![File Locker Dashboard](/images/blog/file-locker/file-locker-dashboard.jpg)
+*Modern web interface with file management and uploads*
+
+![Admin Dashboard](/images/blog/file-locker/file-locker-admin.jpg)
+*System stats, user management, and audit logs*
+
+![CLI Tool](/images/blog/file-locker/file-locker-cli.jpg)
+*Automation-ready CLI with progress tracking*
+
+---
+
+## What I Built
+
+### Backend (Go)
+- REST API with 32+ endpoints
+- Multipart file uploads with streaming
+- Automatic encryption pipeline
+- Secure downloads with on-the-fly decryption
+- Video streaming with HTTP Range support
+- PostgreSQL full-text search
+
+### Authentication & Security
+- JWT-based sessions with Redis caching
+- Personal Access Tokens for API/CLI
+- Role-based access control
+- Password hashing with Bcrypt
+- Session expiry + force logout
+
+### Admin Dashboard
+- User approval & role management
+- File moderation & deletion
+- Storage analysis & cleanup
+- Audit logs
+- System announcements
+
+### Web Interface
+- Drag-and-drop uploads
+- Real-time progress
+- File tagging & search
+- Expiring files
+- In-browser video player
+- Dark / light mode
+
+### CLI Tool
+- 38 commands (100% API coverage)
+- Upload, download, search, export
+- Token management
+- Admin tools
+- Script-friendly output & exit codes
+
+---
+
+## Architecture Overview
+
+It's a microservices-style setup running via Docker Compose:
+
+1.  **Nginx:** Handles SSL termination and routes traffic.
+2.  **Go API:** The brain. Handles auth, encryption logic, and database queries.
+3.  **MinIO:** The dumb storage layer. It only sees encrypted blobs.
+4.  **Redis:** Caches user sessions and download tokens for speed.
+
+**Service Flow:**
+
+```text
+Frontend (Nginx) → Go API → PostgreSQL
+                     ↓
+                   MinIO
+                     ↓
+                   Redis
+```
+
+**Encryption Pipeline:**
+
+```text
+Upload → Encrypt (AES-256-GCM) → Store (MinIO)
+                ↓
+         Metadata (PostgreSQL)
+```
+
+**Streaming Pipeline:**
+
+```text
+Range Request → Decrypt (AES-256-CTR) → Stream
+```
+
+---
+
+## Key Takeaways
+* **Go is perfect for IO:** Streaming encrypted data with `io.Reader` and `io.Writer` interfaces in Go is incredibly memory efficient.
+* **State management:** Managing upload progress and resumable uploads required careful frontend-backend sync.
+* **Cross-Platform Builds:** Since I code on a Mac (ARM64) and deploy to a Pi (Linux ARM64), setting up `docker buildx` pipelines was essential.
+
+**[View Source on GitHub](https://github.com/sachinthra/file-locker)**
+
+---
+
+## Why This Project Matters
+
+This project demonstrates:
+
+- **Backend engineering:** Go APIs, database design, and efficient data handling
+- **Security implementation:** AES encryption, JWT authentication, and RBAC
+- **DevOps practices:** Docker containerization, multi-service orchestration, and ARM64 deployment
+- **System design:** Scalable architecture with proper separation of concerns
+- **Real-world production experience:** Running 24/7 on my home network
+
+File Locker isn't just a demo app — it's a **real system** I use daily to solve real storage and streaming needs.
+5:Td0e,
+I have been working on a NAS (Network Attached Storage) project at home. The goal is to create a centralized storage solution that can be accessed from anywhere in the house, and also in future remotely when needed.
+
+This project is a great way to learn about Linux, networking, and storage solutions. Here's a quick overview of what I set out to achieve:
+1. Create a solid, always available storage server accessible from any device on my local network.
+2. Lay the groundwork for future remote access, so I can grab a photo or a video from anywhere in the world.
+
+---
+
+## Why a Home NAS?
+
+- **Centralized Storage**
+  No more USB drives or SD cards for copying data between devices. Everything lives in one centralized place.
+- **Media Streaming**
+  Stream movies, music and photos to TVs, laptops and phones without juggling external drives.
+- **Automated Backups**
+  To be done, Weekly backups of devices to keep data safe and recoverable.
+
+---
+
+## Hardware & Software Stack
+
+- **Raspberry Pi 4**
+  Consumes low power draw, silent operation, and enough USB 3.0 throughput for a few spinning drives. Can mount hats for additional functionalities for NVMe storage or other peripherals in the future.
+- **OpenMediaVault (OMV)**
+  One of the most popular and open-source debian linux based NAS OS/Software with a polished web UI—packages for SMB, NFS, FTP for file sharing and mainly support raid configurations for redundancy.
+- **External Drives**
+  A 1TB HDDs in a USB-powered. Can also add more USB drives as needed.
+- **Networking**
+  - Static IP via NetworkManager to keep the server address predictable.
+  - Connected via Ethernet cable for maximum throughput.
+
+---
+
+## What I Did
+
+1. **Hardware Assembly**
+   – Assembled the RaspberryPi 4 + USB-HDD.
+   – No need for any monitor, keyboard or mouse as all the configuration is done via Raspberry Pi Imager and later using SSH.
+2. **OMV Installation & Configuration**
+   – Ran OMV install script using SSH.
+   – Created and mounted file systems (EXT4) in the web UI.
+   – Defined shared folders and applied user/group permissions.
+3. **Service Enablement**
+   – SMB for Windows clients, NFS for Linux/macOS, and FTP.
+   – Next set up docker on the Raspberry Pi for future containers.
+   - Installed Plex Media Server for streaming media files to various devices.
+4. **Networking**
+   – Assigned a static IP via `nmcli`.
+
+---
+
+## Key Lessons & Next Steps
+- **Learning Curve**
+  Setting up a NAS from scratch taught me a lot about Linux, networking, and storage management.
+- **Remote Access**
+  Next up is setting up a VPN so I can safely reach my NAS from anywhere.
+- **Future Services**
+  I plan to add more services like a home automation server, Torrent client and Media backups.
+- **Containerization**
+  I'll deploy Nextcloud in Docker for cloud-style file sync, and Plex for on-the-fly transcoding.
+
+---
+
+## Why This Matters
+This project forced me to learn **Linux SysAdmin skills** for real. I got comfortable with `fstab`, user groups, `systemd`, and diagnosing network bottlenecks. It's not just a hard drive plugged into a router; it's a managed storage server.
+
+This project not only gave me a robust home-grown storage server but also deepened my skills in Linux administration, networking, and automation. Stay tuned for a detailed setup guide coming next!
+6:Tc5f,
+I always wanted to run a server at home, some of the reasons was to
+1. learn and experiment with technology.
+2. I also wanted to have a place to store my files, run my own services.
+3. I wanted to have a place to host my own website, which solves some simple problems.
+
+I started with a Raspberry Pi, which i was already familiar with. It was a great way to get started, as it was cheap and easy way to own a server. First I experimented with some of the options. Like running different OS, running docker containers with my existing applications I build.
+
+I had some of the projects in mind already, like
+1. A NAS(Network Attached Storage) to store my files, photos and movies. which can be accessed form anywhere unless i am connected to home network.
+2. A web server to convert
+    - PDF files to images, and resize
+    - Image compress images.
+3. A Photo gallery to store and view my photos. To alternative to Google Photos which is full already.
+4. Some home automation projects, with combining using ESP32.
+
+Guess what, I was able to run all of these projects on my Raspberry Pi. It was a great learning experience, and I was able to learn a lot about IOT, networking, and web development. And also other products link GITHub runners, docker, Proxy servers, etc.
+
+For the NAS, I used [OpenMediaVault](https://www.openmediavault.org/) which is a free and open-source NAS solution based on Debian Linux. It was easy to set up and use, and it had all the features I needed. I was able to access my files from anywhere, and I could also share them with my friends and family. Wait one interesting feature with this NAS i also added a Torrent client. Well will go in details about it in another post.
+This was a start of my home server journey.
+
+---
+
+## The Tech Stack
+
+* **Hardware:** Raspberry Pi 4 (4GB RAM) + 1TB HDD
+* **OS:** Raspberry Pi OS (Debian Bullseye)
+* **Core Services:** OpenMediaVault (NAS), Docker, Nginx (Reverse Proxy)
+* **Apps:** Plex, GitHub Actions Runner, Home Automation Scripts
+* **Networking:** Static IP, SSH Key Auth, Port Forwarding
+
+---
+
+## What's Running (The "Production" Env)
+
+This isn't just a toy; if this goes down, I lose access to my files.
+
+1.  **NAS (OpenMediaVault):** The backbone. 1TB of storage accessible via SMB and NFS.
+2.  **Media Center (Plex):** Streams 1080p content to my TV. The Pi 4 handles direct play perfectly, though transcoding 4K makes it sweat.
+3.  **Dev Environment:**
+    * **GitHub Self-Hosted Runner:** My Pi actually runs CI/CD pipelines for my other repos.
+    * **Docker:** Isolated containers for testing apps before deploying them to the cloud.
+4.  **Utilities:**
+    * **PDF Tools:** A local microservice I wrote to merge/split PDFs because online tools are sketchy with privacy.
+    * **Image Compression:** Batch processes photos before archiving.
+
+---
+
+## What I Learned
+* **Linux is robust:** Once you configure systemd services correctly, they just run. Forever.
+* **Security matters:** Exposing ports meant I had to harden SSH (keys only, no root login) and set up `fail2ban`.
+* **Backups are key:** RAID is not a backup. I have a cron job that rsyncs critical data to a secondary drive.
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"posts":[{"slug":"robot-eyes","title":"Building an Expressive Robot Face with Python and a Tiny OLED","description":"How I built RoboEyes — a smooth, thread-safe animation engine that renders expressive robot eyes on a 128x64 OLED display, controllable via REST API.","pubDate":"2026-04-26T18:30:00.000Z","heroImage":"/images/blog/robot-eyes/robot-eyes-hero.jpeg","tags":["Robotics","Python","Raspberry Pi","OLED","Animation"],"content":"$3"},{"slug":"file-locker","title":"File Locker","description":"A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption.","pubDate":"2025-12-31T18:30:00.000Z","heroImage":"/images/blog/file-locker/file-locker-hero.jpg","tags":["Go","Security","Self-Hosted","Full-Stack","Docker","System Design"],"content":"$4"},{"slug":"nas-project","title":"NAS Project","description":"Building a reliable, multi-protocol NAS (SMB, NFS, FTP) on a Raspberry Pi 4 using OpenMediaVault.","pubDate":"2025-01-07T18:30:00.000Z","heroImage":"/images/blog/nas/raspberry-pi-nas-medium.jpeg","tags":["NAS","Home Server","Raspberry Pi","OpenMediaVault","Linux","Storage","Networking"],"content":"$5"},{"slug":"home-server","title":"Home Server (The Hub)","description":"How I replaced paid cloud services with a Raspberry Pi 4, Docker, and 1TB of storage running 24/7 in my living room.","pubDate":"2024-12-25T18:30:00.000Z","heroImage":"/images/blog/home-server/raspberry-pi-server-running-medium.jpeg","tags":["Home Server","Raspberry Pi","Docker","Self-Hosted","IoT","SysAdmin"],"content":"$6"}]}],["$L7","$L8"],"$L9"]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"C9JTqLSiB7i8DAiqnDpuj"}
+7:["$","script","script-0",{"src":"/_next/static/chunks/059rb3~t9vwpm.js","async":true}]
+8:["$","script","script-1",{"src":"/_next/static/chunks/06jefac748n2p.js","async":true}]
+9:["$","$La",null,{"children":["$","$b",null,{"name":"Next.MetadataOutlet","children":"$@c"}]}]
+c:null
