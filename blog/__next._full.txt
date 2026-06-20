@@ -5,9 +5,93 @@
 5:I[37457,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"default"]
 6:I[13642,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"default"]
 7:I[92276,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js","/_next/static/chunks/059rb3~t9vwpm.js","/_next/static/chunks/06jefac748n2p.js"],"default"]
-11:I[68027,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"default",1]
+12:I[68027,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"default",1]
 :HL["/_next/static/chunks/0yke0j0cekzb3.css","style"]
-8:T189c,
+8:Te23,
+Project Rover started as a Raspberry Pi-controlled 4WD platform and evolved into a real-time ESP32-based robot. This build taught me practical lessons in power distribution, firmware workflows, and responsive embedded web control.
+
+In this post, I cover the hardware choices, the star-grounding approach that kept the system stable, the headless remote flashing pipeline, and the software architecture behind the control interface.
+
+---
+
+## Hardware Bill of Materials
+
+- **Microcontroller (Brain):** ESP32-WROOM-32 (38-pin DevKitC)
+- **Compile/Flash Host:** Raspberry Pi 4 (Debian 12)
+- **Motor Drivers:** 2x L298N dual H-bridge modules
+- **Motors:** 4x 6V BO DC motors (100 RPM / 300 RPM variants)
+- **Battery:** 11.1V 2200mAh 3S LiPo (XT60)
+- **Regulation:** LM2596 3A buck converter
+
+---
+
+## Phase 1: Power Distribution and Stability
+
+With a 3S LiPo, voltage and current spikes are the biggest risk. A fully charged pack can hit around 12.6V, and motor stall current can introduce enough noise to crash the controller if wiring is sloppy.
+
+### Star Ground Topology
+
+Instead of daisy-chaining grounds, I used a star topology:
+
+1. Battery positive and ground go to central distribution points.
+2. Raw battery voltage goes directly to both L298N motor driver inputs.
+3. A separate branch feeds the LM2596, tuned to a stable 5.0V output.
+4. The ESP32 `VIN` is powered from this regulated 5V branch.
+5. ESP32 ground returns directly to the central ground hub.
+
+This keeps noisy motor return current out of the logic ground path and improved system reliability immediately.
+
+---
+
+## Phase 2: Brain Transplant to ESP32
+
+I initially controlled the rover from a Raspberry Pi using Python GPIO libraries, but moved control to ESP32 for better real-time behavior and cleaner C++ firmware architecture.
+
+### Headless Flashing Workflow
+
+I turned the Raspberry Pi into a remote compile-and-flash station so I could update firmware over SSH without tethering a laptop to the rover.
+
+1. ESP32 connects to the Pi via a Micro-USB data cable.
+2. I SSH into the Pi and run PlatformIO CLI.
+3. `pio run -t upload` compiles and flashes firmware over USB.
+
+One practical issue: if PlatformIO reports `Unable to verify flash chip connection`, the upload baud rate is usually too high. Setting `upload_speed = 115200` in `platformio.ini` fixed this reliably.
+
+---
+
+## Phase 3: Async Web Control and Motor Logic
+
+With ESP32 in control, I built a responsive Wi-Fi control interface around `ESPAsyncWebServer`.
+
+- **Web UI storage:** HTML/CSS/JS served from LittleFS.
+- **PWM control:** Native `ledc` channels (8-bit, 1000Hz) drive `ENA`/`ENB` pins.
+- **Motor safety:** PWM duty limited to 50% to protect 6V motors from 3S battery voltage.
+
+### Fixing Brownout Resets
+
+During early testing, pressing forward caused full reboots after a short burst.
+
+- **Cause:** simultaneous motor startup produced a current spike and voltage dip.
+- **Fix:** software soft-start ramped PWM from 0% to 50% over a few hundred milliseconds.
+
+I also plan to add bulk capacitance near the LM2596 output as an additional hardware safeguard.
+
+---
+
+## Phase 4: Sensor Expansion Roadmap
+
+The 38-pin ESP32 board still leaves enough GPIO for autonomy features:
+
+- **Ultrasonic radar (HC-SR04 + servo):** obstacle scanning with a 5V-to-3.3V divider on Echo.
+- **IR line tracking:** digital reads on input-only GPIOs (34, 35, 36, 39).
+- **I2C display:** reserved GPIO 21 (SDA) and GPIO 22 (SCL) for telemetry.
+
+Next milestone is integrating autonomous navigation and adding Bluetooth gamepad control.
+
+---
+
+Built with C++, PlatformIO, and many hardware debugging sessions.
+9:T189c,
 I wanted to give a robot a face. Not a screen playing a video loop — something alive. Eyes that blink on their own, squint when confused, and light up when happy. All on a $5 OLED display the size of a postage stamp.
 
 RoboEyes is the animation engine I built to make that happen. It runs at 60 fps, smoothly interpolates between emotions, and exposes a REST API so any other system — gesture recognition, voice assistant, whatever — can control the face in real time.
@@ -156,7 +240,7 @@ Custom directions, pupil shapes (`square`, `round`, `ellipse`), and auto-mode be
 
 I'm working on integrating this with a camera-based gesture recognition system so the robot reacts to hand signals in real time. I also want to add a web-based emotion editor so designing new expressions doesn't require manually editing dictionaries. And eventually, audio-reactive expressions — the eyes respond to sound input, not just API calls.
 
----9:T134a,
+---a:T134a,
 ## The Pitch
 I wanted a Google Drive alternative, but one where *I* owned the encryption keys.
 
@@ -305,7 +389,7 @@ This project demonstrates:
 - **Real-world production experience:** Running 24/7 on my home network
 
 File Locker isn't just a demo app — it's a **real system** I use daily to solve real storage and streaming needs.
-a:Td0e,
+b:Td0e,
 I have been working on a NAS (Network Attached Storage) project at home. The goal is to create a centralized storage solution that can be accessed from anywhere in the house, and also in future remotely when needed.
 
 This project is a great way to learn about Linux, networking, and storage solutions. Here's a quick overview of what I set out to achieve:
@@ -373,7 +457,7 @@ This project is a great way to learn about Linux, networking, and storage soluti
 This project forced me to learn **Linux SysAdmin skills** for real. I got comfortable with `fstab`, user groups, `systemd`, and diagnosing network bottlenecks. It's not just a hard drive plugged into a router; it's a managed storage server.
 
 This project not only gave me a robust home-grown storage server but also deepened my skills in Linux administration, networking, and automation. Stay tuned for a detailed setup guide coming next!
-b:Tc5f,
+c:Tc5f,
 I always wanted to run a server at home, some of the reasons was to
 1. learn and experiment with technology.
 2. I also wanted to have a place to store my files, run my own services.
@@ -425,18 +509,18 @@ This isn't just a toy; if this goes down, I lose access to my files.
 * **Linux is robust:** Once you configure systemd services correctly, they just run. Forever.
 * **Security matters:** Exposing ports meant I had to harden SSH (keys only, no root login) and set up `fail2ban`.
 * **Backups are key:** RAID is not a backup. I have a cron job that rsyncs critical data to a secondary drive.
-0:{"P":null,"c":["","blog"],"q":"","i":false,"f":[[["",{"children":["blog",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0yke0j0cekzb3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/0o8me~6ve4ttd.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/0dbhjjzl8qfwv.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","suppressHydrationWarning":true,"children":[["$","head",null,{"children":["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Sachinthra N V\",\"url\":\"https://sachinthra.github.io\",\"jobTitle\":\"Software Development Engineer II\",\"worksFor\":{\"@type\":\"Organization\",\"name\":\"Hewlett Packard Enterprise\"},\"sameAs\":[\"https://github.com/sachinthra\",\"https://linkedin.com/in/sachinthra/\",\"https://x.com/Sachinthra\"],\"knowsAbout\":[\"Cloud Computing\",\"Go\",\"Python\",\"Docker\",\"Kubernetes\",\"IoT\",\"Raspberry Pi\"]}"}}]}],["$","body",null,{"className":"min-h-screen","children":["$","$L2",null,{"children":[["$","$L3",null,{}],["$","main",null,{"children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","$L6",null,{}]]}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[["$","$L7",null,{"posts":[{"slug":"robot-eyes","title":"Building an Expressive Robot Face with Python and a Tiny OLED","description":"How I built RoboEyes — a smooth, thread-safe animation engine that renders expressive robot eyes on a 128x64 OLED display, controllable via REST API.","pubDate":"2026-04-26T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/robot-eyes/robot-eyes-hero.jpeg","tags":["Robotics","Python","Raspberry Pi","OLED","Animation"],"content":"$8"},{"slug":"file-locker","title":"File Locker","description":"A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption.","pubDate":"2025-12-31T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/file-locker/file-locker-hero.jpg","tags":["Go","Security","Self-Hosted","Full-Stack","Docker","System Design"],"content":"$9"},{"slug":"nas-project","title":"NAS Project","description":"Building a reliable, multi-protocol NAS (SMB, NFS, FTP) on a Raspberry Pi 4 using OpenMediaVault.","pubDate":"2025-01-07T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/nas/raspberry-pi-nas-medium.jpeg","tags":["NAS","Home Server","Raspberry Pi","OpenMediaVault","Linux","Storage","Networking"],"content":"$a"},{"slug":"home-server","title":"Home Server (The Hub)","description":"How I replaced paid cloud services with a Raspberry Pi 4, Docker, and 1TB of storage running 24/7 in my living room.","pubDate":"2024-12-25T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/home-server/raspberry-pi-server-running-medium.jpeg","tags":["Home Server","Raspberry Pi","Docker","Self-Hosted","IoT","SysAdmin"],"content":"$b"}]}],["$Lc","$Ld"],"$Le"]}],{},null,false,null]},null,false,"$@f"]},null,false,null],"$L10",false]],"m":"$undefined","G":["$11",["$L12"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"C9JTqLSiB7i8DAiqnDpuj"}
-13:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"OutletBoundary"]
-14:"$Sreact.suspense"
-17:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"ViewportBoundary"]
-19:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"MetadataBoundary"]
-c:["$","script","script-0",{"src":"/_next/static/chunks/059rb3~t9vwpm.js","async":true,"nonce":"$undefined"}]
-d:["$","script","script-1",{"src":"/_next/static/chunks/06jefac748n2p.js","async":true,"nonce":"$undefined"}]
-e:["$","$L13",null,{"children":["$","$14",null,{"name":"Next.MetadataOutlet","children":"$@15"}]}]
-16:[]
-f:"$W16"
-10:["$","$1","h",{"children":[null,["$","$L17",null,{"children":"$L18"}],["$","div",null,{"hidden":true,"children":["$","$L19",null,{"children":["$","$14",null,{"name":"Next.Metadata","children":"$L1a"}]}]}],null]}]
-12:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0yke0j0cekzb3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
-18:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
-15:null
-1a:[["$","title","0",{"children":"Blog | Sachinthra N V"}],["$","meta","1",{"name":"description","content":"Engineering notes, project deep-dives, and things I'm learning."}],["$","meta","2",{"name":"author","content":"Sachinthra N V"}],["$","meta","3",{"name":"keywords","content":"Sachinthra N V,Cloud Developer,Software Engineer,HPE,Portfolio,Go,Python,Robotics,IoT,React,DevOps,Raspberry Pi"}],["$","link","4",{"rel":"canonical","href":"https://sachinthra.github.io"}],["$","meta","5",{"property":"og:title","content":"Sachinthra N V — Software Engineer | Cloud & IoT"}],["$","meta","6",{"property":"og:description","content":"SDE-2 at HPE. Building cloud-native solutions, self-hosted infrastructure, and IoT systems with Go, Python, Docker & Kubernetes."}],["$","meta","7",{"property":"og:site_name","content":"Sachinthra N V"}],["$","meta","8",{"property":"og:locale","content":"en_US"}],["$","meta","9",{"property":"og:type","content":"website"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:creator","content":"@sachinthra"}],["$","meta","12",{"name":"twitter:title","content":"Sachinthra N V — Software Engineer | Cloud & IoT"}],["$","meta","13",{"name":"twitter:description","content":"SDE-2 at HPE. Building cloud-native solutions, self-hosted infrastructure, and IoT systems with Go, Python, Docker & Kubernetes."}]]
+0:{"P":null,"c":["","blog"],"q":"","i":false,"f":[[["",{"children":["blog",{"children":["__PAGE__",{}]}]},"$undefined","$undefined",16],[["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0yke0j0cekzb3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","script","script-0",{"src":"/_next/static/chunks/0o8me~6ve4ttd.js","async":true,"nonce":"$undefined"}],["$","script","script-1",{"src":"/_next/static/chunks/0dbhjjzl8qfwv.js","async":true,"nonce":"$undefined"}]],["$","html",null,{"lang":"en","suppressHydrationWarning":true,"children":[["$","head",null,{"children":["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"{\"@context\":\"https://schema.org\",\"@type\":\"Person\",\"name\":\"Sachinthra N V\",\"url\":\"https://sachinthra.github.io\",\"jobTitle\":\"Software Development Engineer II\",\"worksFor\":{\"@type\":\"Organization\",\"name\":\"Hewlett Packard Enterprise\"},\"sameAs\":[\"https://github.com/sachinthra\",\"https://linkedin.com/in/sachinthra/\",\"https://x.com/Sachinthra\"],\"knowsAbout\":[\"Cloud Computing\",\"Go\",\"Python\",\"Docker\",\"Kubernetes\",\"IoT\",\"Raspberry Pi\"]}"}}]}],["$","body",null,{"className":"min-h-screen","children":["$","$L2",null,{"children":[["$","$L3",null,{}],["$","main",null,{"children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}],["$","$L6",null,{}]]}]}]]}]]}],{"children":[["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["$","$1","c",{"children":[["$","$L7",null,{"posts":[{"slug":"project-rover","title":"Project Rover: From Raspberry Pi to ESP32","description":"How I built a 4WD robotics platform with ESP32, solved brownout resets with proper power design, and created a remote PlatformIO flashing workflow.","pubDate":"2026-06-19T18:30:00.000Z","updatedDate":"$undefined","heroImage":"$undefined","tags":["Robotics","ESP32","Raspberry Pi","Embedded Systems","PlatformIO","IoT"],"content":"$8"},{"slug":"robot-eyes","title":"Building an Expressive Robot Face with Python and a Tiny OLED","description":"How I built RoboEyes — a smooth, thread-safe animation engine that renders expressive robot eyes on a 128x64 OLED display, controllable via REST API.","pubDate":"2026-04-26T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/robot-eyes/robot-eyes-hero.jpeg","tags":["Robotics","Python","Raspberry Pi","OLED","Animation"],"content":"$9"},{"slug":"file-locker","title":"File Locker","description":"A production-ready encrypted file storage and streaming system built from scratch using Go, Docker, and AES-256 encryption.","pubDate":"2025-12-31T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/file-locker/file-locker-hero.jpg","tags":["Go","Security","Self-Hosted","Full-Stack","Docker","System Design"],"content":"$a"},{"slug":"nas-project","title":"NAS Project","description":"Building a reliable, multi-protocol NAS (SMB, NFS, FTP) on a Raspberry Pi 4 using OpenMediaVault.","pubDate":"2025-01-07T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/nas/raspberry-pi-nas-medium.jpeg","tags":["NAS","Home Server","Raspberry Pi","OpenMediaVault","Linux","Storage","Networking"],"content":"$b"},{"slug":"home-server","title":"Home Server (The Hub)","description":"How I replaced paid cloud services with a Raspberry Pi 4, Docker, and 1TB of storage running 24/7 in my living room.","pubDate":"2024-12-25T18:30:00.000Z","updatedDate":"$undefined","heroImage":"/images/blog/home-server/raspberry-pi-server-running-medium.jpeg","tags":["Home Server","Raspberry Pi","Docker","Self-Hosted","IoT","SysAdmin"],"content":"$c"}]}],["$Ld","$Le"],"$Lf"]}],{},null,false,null]},null,false,"$@10"]},null,false,null],"$L11",false]],"m":"$undefined","G":["$12",["$L13"]],"S":true,"h":null,"s":"$undefined","l":"$undefined","p":"$undefined","d":"$undefined","b":"VHAfXa7NxkttB1JRizwqy"}
+14:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"OutletBoundary"]
+15:"$Sreact.suspense"
+18:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"ViewportBoundary"]
+1a:I[97367,["/_next/static/chunks/0o8me~6ve4ttd.js","/_next/static/chunks/0dbhjjzl8qfwv.js"],"MetadataBoundary"]
+d:["$","script","script-0",{"src":"/_next/static/chunks/059rb3~t9vwpm.js","async":true,"nonce":"$undefined"}]
+e:["$","script","script-1",{"src":"/_next/static/chunks/06jefac748n2p.js","async":true,"nonce":"$undefined"}]
+f:["$","$L14",null,{"children":["$","$15",null,{"name":"Next.MetadataOutlet","children":"$@16"}]}]
+17:[]
+10:"$W17"
+11:["$","$1","h",{"children":[null,["$","$L18",null,{"children":"$L19"}],["$","div",null,{"hidden":true,"children":["$","$L1a",null,{"children":["$","$15",null,{"name":"Next.Metadata","children":"$L1b"}]}]}],null]}]
+13:["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0yke0j0cekzb3.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]
+19:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+16:null
+1b:[["$","title","0",{"children":"Blog | Sachinthra N V"}],["$","meta","1",{"name":"description","content":"Engineering notes, project deep-dives, and things I'm learning."}],["$","meta","2",{"name":"author","content":"Sachinthra N V"}],["$","meta","3",{"name":"keywords","content":"Sachinthra N V,Cloud Developer,Software Engineer,HPE,Portfolio,Go,Python,Robotics,IoT,React,DevOps,Raspberry Pi"}],["$","link","4",{"rel":"canonical","href":"https://sachinthra.github.io"}],["$","meta","5",{"property":"og:title","content":"Sachinthra N V — Software Engineer | Cloud & IoT"}],["$","meta","6",{"property":"og:description","content":"SDE-2 at HPE. Building cloud-native solutions, self-hosted infrastructure, and IoT systems with Go, Python, Docker & Kubernetes."}],["$","meta","7",{"property":"og:site_name","content":"Sachinthra N V"}],["$","meta","8",{"property":"og:locale","content":"en_US"}],["$","meta","9",{"property":"og:type","content":"website"}],["$","meta","10",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","11",{"name":"twitter:creator","content":"@sachinthra"}],["$","meta","12",{"name":"twitter:title","content":"Sachinthra N V — Software Engineer | Cloud & IoT"}],["$","meta","13",{"name":"twitter:description","content":"SDE-2 at HPE. Building cloud-native solutions, self-hosted infrastructure, and IoT systems with Go, Python, Docker & Kubernetes."}]]
